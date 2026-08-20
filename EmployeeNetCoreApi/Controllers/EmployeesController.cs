@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using EmployeeNetCoreApi;
 using EmployeeNetCoreApi.Data;
 using EmployeeNetCoreApi.Repository;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace EmployeeNetCoreApi.Controllers
 {
@@ -92,12 +93,8 @@ namespace EmployeeNetCoreApi.Controllers
             {
                 return Ok(id);
             }
-
-
             return NoContent();
         }
-
-
-
+        
     }
 }
