@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "imra3+dfQvtHEgaKPdC4E+g8uoNf6yg07HgDqH0mi5I=",
+  "Source": "EmployeeNetCoreApi",
+  "BasePath": "_content/EmployeeNetCoreApi",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
