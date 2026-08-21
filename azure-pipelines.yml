@@ -1,0 +1,39 @@
+trigger:
+- main
+
+pool:
+  vmImage: ubuntu-latest
+
+variables:
+  imageRepository: employeecoreapi
+  containerRegistry: employeeacr-connection
+  tag: $(Build.BuildId)
+
+steps:
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: restore
+    projects: '**/*.csproj'
+
+- task: DotNetCoreCLI@2
+  inputs:
+    command: build
+    projects: '**/*.csproj'
+    arguments: '--configuration Release'
+
+- task: Docker@2
+  inputs:
+    command: buildAndPush
+    repository: $(imageRepository)
+    dockerfile: Dockerfile
+    containerRegistry: $(containerRegistry)
+    tags: |
+      latest
+
+- task: AzureWebAppContainer@1
+  inputs:
+    azureSubscription: AzureServiceConnection
+    appName: employee-api-app
+    containers: |
+      employeeacr123.azurecr.io/employeecoreapi:latest
