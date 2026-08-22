@@ -35,7 +35,7 @@ namespace EmployeeNetCoreApi.Controllers
         {
             try
             {
-                string[] str = new string[] { "Hello", "World", "!" };
+                string[] str = new string[] { "Hello", "Nandkishor", "Verma" };
                 var response = str.ToList();
 
                 return response;
