@@ -1,39 +1,79 @@
 trigger:
-- main
+  branches:
+    include:
+      - main
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
 
 variables:
-  imageRepository: employeecoreapi
-  containerRegistry: employeeacr-connection
-  tag: $(Build.BuildId)
+  buildConfiguration: 'Release'
+  imageRepository: 'employeecoreapi'
+  dockerfilePath: '$(Build.SourcesDirectory)/EmployeeNetCoreApi/Dockerfile'
+  buildContext: '$(Build.SourcesDirectory)'
+  containerRegistryServiceConnection: 'employeeacr-connection'
+  azureServiceConnection: 'AzureServiceConnection'
+  containerRegistryLoginServer: 'employeeacr123.azurecr.io'
+  webAppName: 'employee-api-app'
+  imageTag: '$(Build.BuildId)'
 
 steps:
+  - checkout: self
+    displayName: 'Checkout source code'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: restore
-    projects: '**/*.csproj'
+  - task: UseDotNet@2
+    displayName: 'Install .NET SDK'
+    inputs:
+      packageType: 'sdk'
+      version: '8.x'
 
-- task: DotNetCoreCLI@2
-  inputs:
-    command: build
-    projects: '**/*.csproj'
-    arguments: '--configuration Release'
+  - task: DotNetCoreCLI@2
+    displayName: 'Restore NuGet packages'
+    inputs:
+      command: 'restore'
+      projects: '**/*.csproj'
 
-- task: Docker@2
-  inputs:
-    command: buildAndPush
-    repository: $(imageRepository)
-    dockerfile: Dockerfile
-    containerRegistry: $(containerRegistry)
-    tags: |
-      latest
+  - task: DotNetCoreCLI@2
+    displayName: 'Build solution'
+    inputs:
+      command: 'build'
+      projects: '**/*.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-restore'
 
-- task: AzureWebAppContainer@1
-  inputs:
-    azureSubscription: AzureServiceConnection
-    appName: employee-api-app
-    containers: |
-      employeeacr123.azurecr.io/employeecoreapi:latest
+  - task: DotNetCoreCLI@2
+    displayName: 'Run tests'
+    inputs:
+      command: 'test'
+      projects: '**/*Tests/*.csproj'
+      arguments: '--configuration $(buildConfiguration) --no-build'
+    continueOnError: false
+
+  - bash: |
+      echo "Build sources directory: $(Build.SourcesDirectory)"
+      echo "Dockerfiles found:"
+      find "$(Build.SourcesDirectory)" -type f -iname "Dockerfile" -print
+
+      if [ ! -f "$(dockerfilePath)" ]; then
+        echo "ERROR: Dockerfile not found at $(dockerfilePath)"
+        exit 1
+      fi
+    displayName: 'Verify Dockerfile location'
+
+  - task: Docker@2
+    displayName: 'Build and push Docker image'
+    inputs:
+      command: 'buildAndPush'
+      containerRegistry: '$(containerRegistryServiceConnection)'
+      repository: '$(imageRepository)'
+      Dockerfile: '$(dockerfilePath)'
+      buildContext: '$(buildContext)'
+      tags: |
+        $(imageTag)
+        latest
+
+  - task: AzureWebAppContainer@1
+    displayName: 'Deploy container to Azure Web App'
+    inputs:
+      azureSubscription: '$(azureServiceConnection)'
+      appName: '$(webAppName)'
+      containers: '$(containerRegistryLoginServer)/$(imageRepository):$(imageTag)'
